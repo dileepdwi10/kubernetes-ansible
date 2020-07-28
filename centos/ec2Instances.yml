@@ -11,8 +11,9 @@
     image: ami-0c3e74fa87d2a4227 # https://cloud-images.ubuntu.com/locator/ec2/
     id: "web-app"
     sec_group: "{{ id }}-sec"
-    dest: "/home/ubuntu/AWS_Ansible/task_input"
-    home_path: "/home/ubuntu/AWS_Ansible"
+    dest: "/home/ubuntu/kubernetes-ansible/centos/task_input"
+    home_path: "/home/ubuntu/kubernetes-ansible/centos"
+    var_path: "/home/ubuntu/kubernetes-ansible/centos/playbooks"
 
   tasks:
 
@@ -41,14 +42,17 @@
 
     - name: This command will find the Master ip address of instances
       shell:
-        cmd: fold -s task_input | egrep "public_dns_name|public_ip" | awk -F "\"" '{print $4}'| grep -iv "[a-z]" | head -1 > mip_address
-        cmd: sed -i "2ikubernetes-master ansible_host=$(cat mip_address)" hostss
+        cmd: fold -s task_input | egrep "public_dns_name|public_ip" | awk -F "\"" '{print $4}'| grep -iv "[a-z]" | sed -i "2ikubernetes-master ansible_host=$(head -1)" hosts
         chdir: "{{ home_path }}"
+
+    - name: This command will find the Master ip address of instances
+      shell:
+        cmd: fold -s task_input | egrep "public_dns_name|public_ip" | awk -F "\"" '{print $4}'| grep -iv "[a-z]" | sed -i "2iad_addr:$(head -1)" env_variables
+        chdir: "{{ var_path }}"
 
     - name: This command will find the worker ip address of instances
       shell:
-        cmd: fold -s task_input | egrep "public_dns_name|public_ip" | awk -F "\"" '{print $4}' | grep -iv "[a-z]" | tail -1 > wip_address
-        cmd: sed -i "5ikubernetes-worker ansible_host=$(cat wip_address)" hostss
+        cmd: fold -s task_input | egrep "public_dns_name|public_ip" | awk -F "\"" '{print $4}' | grep -iv "[a-z]" | sed -i "5ikubernetes-worker ansible_host=$(tail -1)" hosts
         chdir: "{{ home_path }}"
 
 
@@ -90,7 +94,7 @@
           instance_type: t2.micro
           region: "{{ region }}"
           wait: true
-          count: 5
+          count: 2
           # exact_count: 2
           # count_tag:
           #   Name: App
